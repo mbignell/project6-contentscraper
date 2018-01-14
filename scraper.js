@@ -62,7 +62,9 @@ x('http://shirts4mike.com/shirts.php', '.products li', [{
   'Price': x(`a@href`, '.price'),
   'ImageURL': 'img@src',
   'URL': 'a@href'
-  // how to add current time here?
+  // how to add current time here? for example, I have attempted:
+  // 'Time': getTime()
+  // 'Time': currentTime (variable above)
   }])(function(error, shirts) {
     // Add objects to CSV file with json2csv
     try {
