@@ -7,6 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node scraper.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mbignell/project6-contentscraper.git"
+  },
   "author": "mbignell",
   "license": "ISC",
   "dependencies": {
