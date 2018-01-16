@@ -10,7 +10,7 @@ var fields = ['Title', 'Price', 'ImageURL', 'URL', 'Time'];
 
 const dataFolder = './data';
 
-//check for data folder
+// Check for data folder
 function checkDirectory(folder){
   if (!fs.existsSync(folder)){
     fs.mkdirSync(folder);
@@ -20,6 +20,8 @@ function checkDirectory(folder){
 }
 checkDirectory(dataFolder);
 
+// HELPERS
+// -- Formatting date and time used in CSV and error files
 function getDate() {
   var today = new Date();
   let year = today.getFullYear();
@@ -40,41 +42,36 @@ function getTime() {
   return time;
 }
 
-// Error testing
-// printError({message : 'newone'});
-
-// Error function to use whenever an error occurs.
-// Creates Time stamp, formats error
-// creates file if one does not exist
-// appends error
+// ERROR FUNCTION
+// -- Logs a readable message to the console.
+// -- Creates Time stamp, formats error
+// -- Creates scraper-log file if one does not exist, appends error
 function printError(error) {
+  if (error.code === "ENOTFOUND") {
+    console.error(`There's been a 404 error. Cannot connect to Shirts 4 Mike.`)
+  } else {
+    console.error(`There has been an error with creating your file. Error code: ${error.code}`);
+  }
   let currentTime = new Date();
-  let errorAppend = `[ ${currentTime} ] ${error.message} and ${error.response}\n`;
+  let errorAppend = `[${currentTime}] Error code: ${error.code}\n`;
   if (!fs.existsSync('scraper-error.log')){
     fs.writeFile('scraper-error.log', '', (error) => {
       fs.appendFileSync('scraper-error.log', errorAppend);
     });
-  }else {
+  } else {
     fs.appendFileSync('scraper-error.log', errorAppend);
   };
 };
 
-// Testing time
-let currentTime = getTime();
-
-// Use x-ray to scrape shirts4mike and build each object for the CSV
-// Sets the Title, Price, ImageURL, URL, and TIME???
+// SCRAPER
+// -- Use x-ray to scrape shirts4mike and build each object for the CSV
+// -- Sets the Title, Price, ImageURL, URL, and Time of scrape
 x('http://shirts4mike.com/shirts.php', '.products li', [{
   'Title': 'img@alt',
   'Price': x(`a@href`, '.price'),
   'ImageURL': 'img@src',
   'URL': 'a@href'
-  // how to add current time here? for example, I have attempted:
-  // 'Time': getTime()
-  // 'Time': currentTime (variable above)
   }])(function(error, shirts) {
-    // Adding date to each item and editing title to remove price
-    // this adds it after the fact, yeah? how to do during processing?
     if(!error){
       for(let i= 0; i <= (shirts.length-1); i++){
         shirts[i].Time = getTime();
@@ -83,31 +80,17 @@ x('http://shirts4mike.com/shirts.php', '.products li', [{
       try {
         var csv = json2csv({ data: shirts, fields: fields });
       } catch (error) {
-        // Errors are thrown for bad options, or if the data is empty and no fields are provided.
-        // Be sure to provide fields if it is possible that your data array will be empty.
-        let newError = new Error();
-        printError(newError);
+        printError(error);
       }
       // Writes (or rewrites) the CSV file with most recent data within the data folder
       fs.writeFile(`./data/${getDate()}.csv`, csv, function(error) {
-        if (error) throw error;
-        console.log('file saved');
+        if (error) {
+          printError(error);
+        } else {
+          console.log('Your new CSV file of shirts4mike.com has been saved.');
+        }
       });
     } else {
-      //If http://shirts4mike.com is down,
-      // an error message describing the issue should appear in the console.
-      // Else, normal error log.
-      if (error.response === 404) {
-        console.error(`There's been a 404 error OH NO! Cannot connect to Shirts 4 Mike.`)
-        printError(error);
-      } else {
-        console.error(error);
-        console.log(error.response);
-        // this is logging with an undefined response???????
-        //
-        // FIX
-        //
-        printError(error);
-      };
+      printError(error);
     };
 });
